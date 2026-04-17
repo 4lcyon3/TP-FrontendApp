@@ -1,9 +1,15 @@
 import React from 'react';
 import { useAuth } from "@/hooks/AuthContext";
 import { LogOut, School, User } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <nav className="bg-white shadow-md border-b border-indigo-100 sticky top-0 z-40">
@@ -36,7 +42,7 @@ export const Navbar: React.FC = () => {
             <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
 
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm font-medium"
             >
               <LogOut size={18} />
