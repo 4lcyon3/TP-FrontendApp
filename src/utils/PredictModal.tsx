@@ -15,9 +15,9 @@ export default function PredictModal({ isOpen, onClose, studentId }: PredictModa
   if (!isOpen) return null;
 
   const interpretScore = (score: number) => {
-    if (score > 2.70) return "Posiblemente podrá desaprobar, se necesitará apoyarlo para mejorar su rendimiento.";
-    if (score <= 2.70 && score > 1.75 ) return "Tendrá un desempeño normal, se recomienda brindar retroalimentación.";
-    return "El alumno tiene un alto rendimiento.";
+    if (score > 2.70) return "❌ Tiene un BAJO RENDIMIENTO. Se predice que DESAPROBARÁ sin intervención inmediata.";
+    if (score <= 2.70 && score > 1.75 ) return "⚠️ Tiene un rendimiento MEDIO. Se predice que está EN RIESGO de desaprobar si no mejora.";
+    return "✅ Tiene un ALTO RENDIMIENTO. Se predice que APROBARÁ satisfactoriamente.";
   };
 
   const handlePredict = async () => {

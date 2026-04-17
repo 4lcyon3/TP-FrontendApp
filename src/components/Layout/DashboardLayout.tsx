@@ -1,25 +1,17 @@
-import { Outlet } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import { useEffect } from "react";
+import React from 'react';
+import { Navbar } from './Navbar';
 
-export default function DashboardLayout() {
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
 
-  useEffect(() => {
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <Sidebar />
-
-      <main className="flex-1 p-6 md:p-10">
-        <div className="max-w-7xl mx-auto">
-          <Outlet />
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+      <Navbar />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {children}
       </main>
     </div>
   );
-}
+};

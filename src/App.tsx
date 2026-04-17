@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./features/auth/Login";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/AuthContext";
-import DashboardLayout from "@/components/Layout/DashboardLayout";
+import {DashboardLayout} from "@/components/Layout/DashboardLayout";
 import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
 import {ProtectedRoute} from "./components/ProtectedRoute";
@@ -17,13 +17,15 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route element={
               <ProtectedRoute>
-                  <DashboardLayout /> 
+                <DashboardLayout>
+                  <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/students" element={<Students />} />
+                  </Routes>
+                </DashboardLayout>
               </ProtectedRoute>
-            }>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/students" element={<Students />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            } />
+            <Route path="*" element={<Navigate to="/students" replace />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
