@@ -3,7 +3,6 @@ import Login from "./features/auth/Login";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/AuthContext";
 import {DashboardLayout} from "@/components/Layout/DashboardLayout";
-import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
 import {ProtectedRoute} from "./components/ProtectedRoute";
 
@@ -19,7 +18,6 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/students" element={<Students />} />
                   </Routes>
                 </DashboardLayout>
