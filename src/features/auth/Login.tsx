@@ -63,7 +63,7 @@ const Login: React.FC = () => {
     );
 
     if (ok) {
-      navigate("/dashboard");
+      navigate("/students");
     }
   };
 
@@ -72,7 +72,7 @@ const Login: React.FC = () => {
       <Card className="w-full max-w-md shadow-xl rounded-2xl">
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold">
-            Appweb – Login
+            LecturaActiva - Login
           </CardTitle>
         </CardHeader>
 
