@@ -15,13 +15,12 @@ export const Navbar: React.FC = () => {
     <nav className="bg-white shadow-md border-b border-indigo-100 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white p-2 rounded-lg">
               <School size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-indigo-900">LecturaActiva</h1>
+              <h1 className="text-xl font-bold text-indigo-900">Lectura Activa</h1>
               <p className="text-xs text-slate-500 font-medium">Gestión de Comprensión Lectora</p>
             </div>
           </div>
