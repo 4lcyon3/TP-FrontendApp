@@ -67,8 +67,8 @@ export default function StudentsPage() {
       const avg = count > 0 ? (s.score_total || 0) / count : 0;
       let status = "Sin datos";
       if (count > 0) {
-        if (avg >= 2.70) status = "Aprobado";
-        else if (avg >= 1.90) status = "En Riesgo";
+        if (avg >= 6.5) status = "Aprobado";
+        else if (avg >= 3.45) status = "En Riesgo";
         else status = "Desaprobado";
       }
       return { ...s, calculatedStatus: status, average: avg };
@@ -149,7 +149,7 @@ export default function StudentsPage() {
       return {
         name: `${s.first_name} ${s.last_name}`,
         value: Number(value.toFixed(2)),
-        color: value < 1.9 ? '#ef4444' : value < 2.70 ? '#f59e0b' : '#10b981'
+        color: value < 3.45 ? '#ef4444' : value < 6.5 ? '#f59e0b' : '#10b981'
       };
     });
   }, [studentsWithStatus, top5Metric]);
@@ -305,14 +305,14 @@ export default function StudentsPage() {
                 <span className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide font-semibold mb-1">Promedio General</span>
                 <div 
                   className="text-6xl font-extrabold tracking-tighter transition-colors duration-300"
-                  style={{ color: selectedStudentData.average < 1.9 ? '#ef4444' : selectedStudentData.average < 2.70 ? '#f59e0b' : '#10b981' }}
+                  style={{ color: selectedStudentData.average < 3.45 ? '#ef4444' : selectedStudentData.average < 6.5 ? '#f59e0b' : '#10b981' }}
                 >
                   {selectedStudentData.average.toFixed(2)}
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm ${
-                    selectedStudentData.average < 1.9 ? 'bg-rose-500' : 
-                    selectedStudentData.average < 2.70 ? 'bg-amber-500' : 'bg-emerald-500'
+                    selectedStudentData.average < 3.45 ? 'bg-rose-500' : 
+                    selectedStudentData.average < 6.5 ? 'bg-amber-500' : 'bg-emerald-500'
                   }`}>
                     {selectedStudentData.calculatedStatus}
                   </span>
@@ -423,9 +423,9 @@ export default function StudentsPage() {
               </div>
               <div className="flex flex-wrap gap-2 text-xs justify-center pt-2 border-t dark:border-slate-700">
                 <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded font-medium text-slate-600 dark:text-slate-300">Promedio</span>
-                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded font-bold">≥ 2.70: Aprobado</span>
-                <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold">1.90-2.69: Riesgo</span>
-                <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded font-bold">&lt; 1.90: Desaprobado</span>
+                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded font-bold">≥ 6.5: Aprobado</span>
+                <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold">3.45-6.49: Riesgo</span>
+                <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded font-bold">&lt; 3.45: Desaprobado</span>
               </div>
             </div>
           )}
@@ -505,8 +505,8 @@ export default function StudentsPage() {
               let statusText = "Sin datos";
               
               if (count > 0) {
-                if (avg >= 2.70) { statusColor = "bg-emerald-100 text-emerald-700"; statusText = "Aprobado"; }
-                else if (avg >= 1.90) { statusColor = "bg-amber-100 text-amber-700"; statusText = "En Riesgo"; }
+                if (avg >= 6.5) { statusColor = "bg-emerald-100 text-emerald-700"; statusText = "Aprobado"; }
+                else if (avg >= 3.45) { statusColor = "bg-amber-100 text-amber-700"; statusText = "En Riesgo"; }
                 else { statusColor = "bg-rose-100 text-rose-700"; statusText = "Desaprobado"; }
               }
 
