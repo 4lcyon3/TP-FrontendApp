@@ -16,6 +16,7 @@ export interface Student {
   id: number;
   first_name: string;
   last_name: string;
+  section?: string;
   puntaje?: number;
   promedio?: number;
   observador_total: number;

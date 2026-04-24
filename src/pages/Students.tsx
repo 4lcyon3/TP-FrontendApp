@@ -37,6 +37,7 @@ export default function StudentsPage() {
 
   // Nuevos estados para filtros
   const [statusFilter, setStatusFilter] = useState<"all" | "Aprobado" | "En Riesgo" | "Desaprobado">("all");
+  const [sectionFilter, setSectionFilter] = useState<string>("all"); // Nuevo filtro por sección
   const [top5Metric, setTop5Metric] = useState<"avg" | "c1" | "c2" | "c3">("avg");
   
   // Estado para el selector de alumno en el Card 3
@@ -75,6 +76,17 @@ export default function StudentsPage() {
     });
   }, [studentsForTeacher]);
 
+  // Obtener secciones únicas disponibles
+  const availableSections = useMemo(() => {
+    const sections = new Set<string>();
+    studentsWithStatus.forEach(s => {
+      if (s.section) {
+        sections.add(s.section);
+      }
+    });
+    return Array.from(sections).sort();
+  }, [studentsWithStatus]);
+
   // Inicializar el selector del Card 3 con el primer alumno si no hay uno seleccionado
   useMemo(() => {
     if (!selectedStudentId && studentsWithStatus.length > 0) {
@@ -91,18 +103,29 @@ export default function StudentsPage() {
     );
   }, [q, studentsWithStatus]);
 
-  // FILTRO COMBINADO: Nombre + Estado
+  // FILTRO COMBINADO: Nombre + Estado + Sección
   const filtered = useMemo(() => {
-    if (statusFilter === "all") return filteredByName;
-    return filteredByName.filter(s => s.calculatedStatus === statusFilter);
-  }, [filteredByName, statusFilter]);
+    let result = filteredByName;
+    
+    // Filtro por estado
+    if (statusFilter !== "all") {
+      result = result.filter(s => s.calculatedStatus === statusFilter);
+    }
+    
+    // Filtro por sección
+    if (sectionFilter !== "all") {
+      result = result.filter(s => s.section === sectionFilter);
+    }
+    
+    return result;
+  }, [filteredByName, statusFilter, sectionFilter]);
 
-  // --- DATOS PARA GRÁFICOS ---
+  // --- DATOS PARA GRÁFICOS (Todos responden al filtro de sección) ---
 
-  // 1. Gráfico de Pastel (Distribución por Estado)
+  // 1. Gráfico de Pastel (Distribución por Estado) - Filtrado por sección
   const statsData = useMemo(() => {
     let approved = 0, risk = 0, failed = 0;
-    studentsWithStatus.forEach(s => {
+    filtered.forEach(s => {
       if (s.calculatedStatus === "Aprobado") approved++;
       else if (s.calculatedStatus === "En Riesgo") risk++;
       else if (s.calculatedStatus === "Desaprobado") failed++;
@@ -112,11 +135,11 @@ export default function StudentsPage() {
       { name: 'En Riesgo', value: risk, color: '#f59e0b' },
       { name: 'Desaprobados', value: failed, color: '#ef4444' },
     ];
-  }, [studentsWithStatus]);
+  }, [filtered]);
 
-  // 2. Top 5 Bajo Rendimiento (Dinámico según métrica seleccionada)
+  // 2. Top 5 Bajo Rendimiento (Dinámico según métrica seleccionada) - Filtrado por sección
   const top5LowPerformers = useMemo(() => {
-    const sorted = [...studentsWithStatus].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       let valA = 0, valB = 0;
       const countA = a.cant_evaluaciones || 1;
       const countB = b.cant_evaluaciones || 1;
@@ -152,13 +175,13 @@ export default function StudentsPage() {
         color: value < 3.45 ? '#ef4444' : value < 6.5 ? '#f59e0b' : '#10b981'
       };
     });
-  }, [studentsWithStatus, top5Metric]);
+  }, [filtered, top5Metric]);
 
-  // 3. Datos para el Card de Alumno Seleccionado
+  // 3. Datos para el Card de Alumno Seleccionado - Solo muestra alumnos filtrados
   const selectedStudentData = useMemo(() => {
     if (!selectedStudentId) return null;
-    return studentsWithStatus.find(s => s.id === selectedStudentId);
-  }, [selectedStudentId, studentsWithStatus]);
+    return filtered.find(s => s.id === selectedStudentId);
+  }, [selectedStudentId, filtered]);
 
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -200,10 +223,10 @@ export default function StudentsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <a href="https://kahoot.it" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium border border-purple-200 dark:border-purple-800">
+          <a href="https://kahoot.it " target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium border border-purple-200 dark:border-purple-800">
             <Gamepad2 size={18} /> Abrir Kahoot! <ExternalLink size={14} />
           </a>
-          <a href="https://classdojo.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium border border-green-200 dark:border-green-800">
+          <a href="https://classdojo.com " target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium border border-green-200 dark:border-green-800">
             <ClipboardCheck size={18} /> Abrir ClassDojo <ExternalLink size={14} />
           </a>
         </div>
@@ -294,8 +317,8 @@ export default function StudentsPage() {
               onChange={(e) => setSelectedStudentId(Number(e.target.value))}
               className="w-full text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded px-3 py-2 mb-4 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
             >
-              {studentsWithStatus.length === 0 && <option value="">Sin alumnos</option>}
-              {studentsWithStatus.map(s => (
+              {filtered.length === 0 && <option value="">Sin alumnos</option>}
+              {filtered.map(s => (
                 <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
               ))}
             </select>
@@ -432,7 +455,7 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* Controles: Búsqueda, Filtro Estado y Botones */}
+      {/* Controles: Búsqueda, Filtro Estado, Filtro Sección y Botones */}
       <div className="flex flex-col lg:flex-row gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
@@ -460,11 +483,26 @@ export default function StudentsPage() {
           </select>
         </div>
 
+        {/* Nuevo Filtro por Sección */}
+        <div className="flex items-center gap-2">
+          <BookOpen size={18} className="text-slate-500" />
+          <select
+            value={sectionFilter}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => { setSectionFilter(e.target.value); setPage(1); }}
+            className="py-2 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+          >
+            <option value="all">Todas las secciones</option>
+            {availableSections.map(section => (
+              <option key={section} value={section}>{section}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => setUploadOpen(true)} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow text-sm">
             <Upload className="w-4 h-4" /> Subir reporte
           </Button>
-          <Button onClick={() => exportStudentsExcel(studentsForTeacher)} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition shadow text-sm">
+          <Button onClick={() => exportStudentsExcel(filtered)} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition shadow text-sm">
             <FileSpreadsheet size={16} /> Exportar Excel
           </Button>
         </div>
