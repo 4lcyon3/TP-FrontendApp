@@ -16,6 +16,7 @@ import ConfirmModal from "@/utils/ConfirmModal";
 import UploadReportModal from "@/utils/UploadReportModal";
 import { useQueryClient } from "@tanstack/react-query";
 import PredictModal from "@/utils/PredictModal";
+import GroupPredictModal from "@/utils/GroupPredictModal"; // Importar el nuevo modal
 import { Tooltip } from "@/utils/TooltipProps";
 import {
   Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell,
@@ -37,7 +38,7 @@ export default function StudentsPage() {
 
   // Nuevos estados para filtros
   const [statusFilter, setStatusFilter] = useState<"all" | "Aprobado" | "En Riesgo" | "Desaprobado">("all");
-  const [sectionFilter, setSectionFilter] = useState<string>("all"); // Nuevo filtro por sección
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [top5Metric, setTop5Metric] = useState<"avg" | "c1" | "c2" | "c3">("avg");
   
   // Estado para el selector de alumno en el Card 3
@@ -50,6 +51,9 @@ export default function StudentsPage() {
   const [predictOpen, setPredictOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   
+  // Estado para el modal de predicción grupal
+  const [groupPredictOpen, setGroupPredictOpen] = useState(false);
+  
   const queryClient = useQueryClient();
 
   // Lógica original de filtrado por profesor
@@ -61,9 +65,9 @@ export default function StudentsPage() {
     });
   }, [allStudents, user]);
 
-  // Cálculo de estado individual para cada estudiante (para filtros y gráficos)
+  // Cálculo de estado individual + ORDENAMIENTO ALFABÉTICO
   const studentsWithStatus = useMemo(() => {
-    return studentsForTeacher.map(s => {
+    const processed = studentsForTeacher.map(s => {
       const count = s.cant_evaluaciones || 0;
       const avg = count > 0 ? (s.score_total || 0) / count : 0;
       let status = "Sin datos";
@@ -73,6 +77,23 @@ export default function StudentsPage() {
         else status = "Desaprobado";
       }
       return { ...s, calculatedStatus: status, average: avg };
+    });
+
+    // Ordenar alfabéticamente SOLO por Nombre (first_name), luego por apellido si hay empate
+    return processed.sort((a, b) => {
+      const nameA = a.first_name.toLowerCase();
+      const nameB = b.first_name.toLowerCase();
+
+      if (nameA < nameB) return -1;
+      if (nameA > nameB) return 1;
+
+      // Si los nombres son iguales, desempatar con apellido
+      const lastNameA = a.last_name.toLowerCase();
+      const lastNameB = b.last_name.toLowerCase();
+      if (lastNameA < lastNameB) return -1;
+      if (lastNameA > lastNameB) return 1;
+
+      return 0;
     });
   }, [studentsForTeacher]);
 
@@ -223,10 +244,10 @@ export default function StudentsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <a href="https://kahoot.it " target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium border border-purple-200 dark:border-purple-800">
+          <a href="https://kahoot.it  " target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium border border-purple-200 dark:border-purple-800">
             <Gamepad2 size={18} /> Abrir Kahoot! <ExternalLink size={14} />
           </a>
-          <a href="https://classdojo.com " target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium border border-green-200 dark:border-green-800">
+          <a href="https://classdojo.com  " target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium border border-green-200 dark:border-green-800">
             <ClipboardCheck size={18} /> Abrir ClassDojo <ExternalLink size={14} />
           </a>
         </div>
@@ -505,6 +526,14 @@ export default function StudentsPage() {
           <Button onClick={() => exportStudentsExcel(filtered)} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition shadow text-sm">
             <FileSpreadsheet size={16} /> Exportar Excel
           </Button>
+          {/* Botón Predecir Grupo */}
+          <Button 
+            onClick={() => setGroupPredictOpen(true)} 
+            disabled={filtered.length === 0}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition shadow text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <BrainCircuit size={16} /> Predecir Grupo ({filtered.length})
+          </Button>
         </div>
         <div className="text-sm text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap flex items-center">
           {total} alumnos
@@ -557,8 +586,9 @@ export default function StudentsPage() {
                   <td className="px-4 py-3 text-sm text-center text-blue-600 dark:text-blue-300">{s.persistente_total?.toFixed(1) || "0.0"}</td>
                   <td className="px-4 py-3 text-sm text-center text-purple-600 dark:text-purple-300">{s.competente_total?.toFixed(1) || "0.0"}</td>
                   <td className="px-4 py-3 text-sm text-center text-orange-600 dark:text-orange-300">{s.observador_total?.toFixed(1) || "0.0"}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                  {/* Acciones: Alineado a la izquierda (text-left), sin justify-center en el flex */}
+                  <td className="px-4 py-3 text-sm text-left">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <button 
                         className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center gap-1.5 transition shadow-sm" 
                         onClick={() => setEditStudent(s)} 
@@ -607,6 +637,14 @@ export default function StudentsPage() {
       {confirmDelete && <ConfirmModal studentId={confirmDelete.id} isOpen={!!confirmDelete} onCancel={() => setConfirmDelete(null)} onConfirm={handleDeleteConfirm} title="Eliminar estudiante" description={`¿Seguro que quieres eliminar a ${confirmDelete.first_name} ${confirmDelete.last_name}?`} />}
       {uploadOpen && <UploadReportModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} onSaved={() => queryClient.invalidateQueries({ queryKey: ["students"] })} />}
       {predictOpen && selectedStudent !== null && <PredictModal isOpen={predictOpen} onClose={() => { setPredictOpen(false); setSelectedStudent(null); }} studentId={selectedStudent} />}
+      
+      {/* Modal de Predicción Grupal */}
+      {groupPredictOpen && (
+        <GroupPredictModal 
+          isOpen={groupPredictOpen}
+          onClose={() => setGroupPredictOpen(false)}
+          students={filtered} filterDescription={""}        />
+      )}
     </div>
   );
 }
