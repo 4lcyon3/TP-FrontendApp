@@ -135,7 +135,7 @@ export default function GroupPredictModal({ isOpen, onClose, students, filterDes
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-2xl w-full max-w-5xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 shrink-0">
@@ -234,29 +234,34 @@ export default function GroupPredictModal({ isOpen, onClose, students, filterDes
                   const config = result.prediction ? getVisualConfig(result.prediction.level_label) : null;
                   
                   return (
-                    <div key={idx} className={`border rounded-lg p-4 flex flex-col gap-3 ${config ? `${config.bg} ${config.border}` : 'bg-slate-50 border-slate-200'}`}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                    <div key={idx} className={`border rounded-lg p-4 flex flex-col gap-3 h-auto ${config ? `${config.bg} ${config.border}` : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm truncate" title={`${result.student.first_name} ${result.student.last_name}`}>
                             {result.student.first_name} {result.student.last_name}
                           </p>
-                          <p className="text-xs text-slate-500">{result.student.section || 'Sin sección'}</p>
+                          <p className="text-xs text-slate-500 truncate">{result.student.section || 'Sin sección'}</p>
                         </div>
-                        {config ? config.icon : <XCircle className="text-red-500" size={16} />}
+                        <div className="flex-shrink-0">
+                          {config ? config.icon : <XCircle className="text-red-500" size={16} />}
+                        </div>
                       </div>
 
                       {result.status === 'success' && result.prediction ? (
                         <>
-                          <div>
-                            <p className={`text-xs font-bold uppercase ${config!.color}`}>{result.prediction.level_label}</p>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
-                              {result.prediction.recommendation}
+                          <div className="flex-1">
+                            <p className={`text-xs font-bold uppercase mb-1 ${config!.color}`}>
+                              {result.prediction.level_label}
                             </p>
+                            {/* Texto completo sin line-clamp, con scroll interno solo si es excesivamente largo */}
+                            <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                              {result.prediction.recommendation}
+                            </div>
                           </div>
                           <div className="mt-auto pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
                             <div className="flex justify-between text-[10px] text-slate-500">
                               <span>Confianza</span>
-                              <span>{(result.prediction.confidence * 100).toFixed(0)}%</span>
+                              <span className="font-medium">{(result.prediction.confidence * 100).toFixed(0)}%</span>
                             </div>
                           </div>
                         </>
