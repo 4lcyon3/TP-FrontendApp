@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { previewCsv, bulkSaveReports } from "@/api/reports";
-import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, XCircle, Loader2, Award } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -13,7 +13,23 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null); // Para mostrar errores en UI
+  
+  // Estado para el éxito visual
+  const [showSuccess, setShowSuccess] = useState(false);
+  
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // Efecto para cerrar automáticamente tras el éxito
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        onSaved?.();
+        handleClose(); // Cierra el modal completamente
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, onSaved]);
 
   if (!isOpen) return null;
 
@@ -21,17 +37,22 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
     const f = e.target.files?.[0] ?? null;
     setFile(f);
     setPreview(null);
+    setError(null);
   };
 
   const handlePreview = async () => {
-    if (!file) return alert("Selecciona un archivo CSV primero");
+    if (!file) {
+      setError("Selecciona un archivo CSV primero");
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const data = await previewCsv(file);
       setPreview(data);
     } catch (err) {
       console.error(err);
-      alert("Error al previsualizar CSV");
+      setError("Error al previsualizar CSV. Verifica el formato.");
     } finally {
       setLoading(false);
     }
@@ -49,28 +70,67 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
         observador: d.observador,
       }));
 
-    if (items.length === 0) return alert("No hay estudiantes válidos para guardar.");
+    if (items.length === 0) {
+      setError("No hay estudiantes válidos para guardar.");
+      return;
+    }
 
     setLoading(true);
+    setError(null);
     try {
-      const res = await bulkSaveReports(items);
-      alert(res.mensaje || "Reportes guardados correctamente");
-      onSaved?.();
-      onClose();
+      await bulkSaveReports(items);
+      // En lugar de alert, activamos el modo éxito
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
-      alert("Error guardando reportes");
+      setError("Error guardando reportes. Inténtalo nuevamente.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   const resetForm = () => {
     setFile(null);
     setPreview(null);
+    setError(null);
+    setShowSuccess(false);
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  // --- VISTA DE ÉXITO (Full Screen Overlay dentro del modal) ---
+  if (showSuccess) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-emerald-200 dark:border-emerald-800 overflow-hidden flex flex-col items-center justify-center p-8 text-center animate-in zoom-in-95 duration-300">
+          <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6 animate-bounce">
+            <CheckCircle2 className="w-14 h-14 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+            ¡Importación Exitosa!
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            Los reportes se han guardado correctamente en la base de datos.
+          </p>
+          
+          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+            <div className="h-full bg-emerald-500 animate-[progress_5s_linear_forwards]" style={{ width: '100%' }}></div>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">Cerrando automáticamente en 5s...</p>
+          
+          <button onClick={handleClose} className="mt-6 text-sm text-emerald-600 hover:text-emerald-700 font-medium underline">
+            Cerrar ahora
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VISTA NORMAL DEL MODAL ---
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
@@ -86,7 +146,7 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
               <p className="text-xs text-slate-500 dark:text-slate-400">Importa las evaluaciones de Kahoot! y ClassDojo</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
             <XCircle size={24} />
           </button>
         </div>
@@ -94,6 +154,20 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
         {/* Body Scrollable */}
         <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
           
+          {/* Mensaje de Error General (Reemplaza alert de error) */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3 animate-slide-down">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-red-800 dark:text-red-300 text-sm">Atención</h4>
+                <p className="text-red-700 dark:text-red-400 text-sm mt-1">{error}</p>
+              </div>
+              <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-600">
+                <XCircle size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Area de Carga */}
           <div 
             className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
@@ -115,7 +189,7 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
               </div>
               {file ? (
                 <>
-                  <p className="text-green-700 dark:text-green-400 font-semibold text-lg">{file.name}</p>
+                  <p className="text-green-700 dark:text-green-400 font-semibold text-lg break-all">{file.name}</p>
                   <p className="text-green-600/80 dark:text-green-500/70 text-sm">Archivo listo para procesar</p>
                 </>
               ) : (
@@ -198,7 +272,7 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
                   <div className="overflow-y-auto p-2 space-y-2 custom-scrollbar">
                     {preview.unmatched.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-slate-400 p-4 text-center">
-                        <CheckCircle2 size={32} className="mb-2 opacity-50" />
+                        <Award size={32} className="mb-2 opacity-50" />
                         <p className="text-sm">¡Excelente! Todos los estudiantes fueron reconocidos.</p>
                       </div>
                     ) : (
@@ -228,7 +302,7 @@ export default function UploadReportModal({ isOpen, onClose, onSaved }: Props) {
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
           <button
             className="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition"
-            onClick={onClose}
+            onClick={handleClose}
           >
             Cancelar
           </button>
