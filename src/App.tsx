@@ -1,33 +1,30 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./features/auth/Login";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/hooks/AuthContext";
-import DashboardLayout from "@/components/Layout/DashboardLayout";
-import Dashboard from "@/pages/Dashboard";
-import Students from "@/pages/Students";
-import {ProtectedRoute} from "./components/ProtectedRoute";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './hooks/AuthContext'; // O donde tengas tu AuthProvider
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Login from './features/auth/Login';
+import StudentsPage from './pages/Students';
+import { DashboardLayout } from './components/Layout/DashboardLayout'; 
 
 const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route element={
-              <ProtectedRoute>
-                  <DashboardLayout /> 
-              </ProtectedRoute>
-            }>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/students" element={<Students />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+            <Route path="/students" element={
+              <DashboardLayout>
+                <StudentsPage />
+              </DashboardLayout>
+            } />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
